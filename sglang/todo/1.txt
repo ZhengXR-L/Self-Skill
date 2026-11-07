@@ -1,0 +1,407 @@
+bash -x server.sh
+
+python3 verify_hicache_retry_interval_npu.py \
+  --interval 1 \
+  --port 7777 \
+  --log /tmp/hicache-retry-i1.log
+
+PYTHONPATH="/sgl-workspace/sglang/python${PYTHONPATH:+:$PYTHONPATH}" \
+python /home/l00889655/sglang/sglang/benchmark/gsm8k/bench_sglang.py \
+  --host 127.0.0.1 \
+  --port 7777 \
+  --num-questions 256 \
+  --parallel 32 \
+  --num-shots 5 \
+  --max-new-tokens 256
+  
+启动蓝区电脑必做：
+1、蓝区、黄区的文件传输需要开启
+2、D:\clientV2\NetproxyClient开启start.bat，支持黄区jumper蓝区
+3、开启uniVPN/clash verge/ikuuup访问外网
+4、开启codex
+
+https://github.com/sgl-project/sglang
+https://github.com/sgl-project/sgl-kernel-npu
+
+bl0wPSGf/+ZJTJ44565RX/%I
+bl0wPSGf/+ZJTJ44562RX/%I
+
+modelscope download --model deepseek-ai/DeepSeek-V4-Flash-0731 --local_dir ./DeepSeek-V4-Flash-0731
+
+nohup modelscope download --model deepseek-ai/DeepSeek-V4-Flash-0731 --local_dir ./DeepSeek-V4-Flash-0731 > download.log 2>&1 &
+
+python3 test/registered/npu/basic_function/parallel_strategy/context_parallelism/test_npu_cp_decode_attn_tp.py
+
+docker exec -it sglang-lzx bash
+source /usr/local/Ascend/cann-9.1.0/set_env.sh
+source /usr/local/Ascend/cann-9.1.0/opp/vendors/customize/bin/set_env.bash
+source /usr/local/Ascend/cann-9.1.0/opp/vendors/custom_transformer/bin/set_env.bash
+
+export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export SGLANG_TEST_CP_DECODE_MODEL_PATH=/mnt/paas/weights/DeepSeek-V4-Flash-0731-w8a8
+export PYTHONPATH=/home/l00889655/sglang/sglang/python${PYTHONPATH:+:$PYTHONPATH}
+
+cd /home/l00889655/sglang/sglang
+python3 -u test/registered/npu/basic_function/parallel_strategy/context_parallelism/test_npu_cp_decode_attn_tp.py
+
+# 1. 切换到并更新最新的目标分支
+git checkout main
+git pull origin main
+
+# 2. 切换回你的特征分支
+git checkout feature
+
+# 3. 将 feature 变基到最新的 main 上
+git rebase main
+
+# 4.（若有冲突）解决冲突后继续：
+# 编辑冲突文件 -> git add . -> git rebase --continue
+
+[Type] [Hardware] scope: title
+
+
+pr 提PR base
+nightly 日构建
+full 全量
+
+参数适配都写full
+只写A3, 只关心suite参数
+只涉及测试用例的修改，不用在公共检视会上检视
+用例位置参考 参数表格
+
+帮我梳理一下实现 layer_first 支持需要改动哪些文件，以及对应的验收测试用例该怎么设计
+
+问题：
+1、head_dim和v_head_dim分别指什么
+- head_dim ：每个 head 的 K（key）向量长度 （MHA 里 Q 与 K 的 head 维相同，所以也等于 Q 的维度）。
+- v_head_dim ：每个 head 的 V（value）向量长度 。
+2、target层和draft层分别指什么
+- target 层 ：主模型（自回归主体）的 transformer 层的 KV cache。
+- draft 层 ：投机解码里 draft 模型（如 MTP/EAGLE）额外那几个层的 KV，用来快速猜候选 token，最后由 target 验证。
+3、device池size指什么
+设备侧（L1）每个 layer 能容纳的 token 数
+4、这里的token数是否等于page_size
+page_size:一页包含的token数，size：每个layer包含的总token数；
+5、host侧为什么没有page维
+layer_first的布局选择，没有物理上的页边界
+6、host 的size为80的推导没有看懂
+host(l2)的容量是device(l1)的2倍，所以32*2=64,除以每页16个token，再加上一页padding为64//16+1=5, 总token即为16*5=80。
+7、没看懂“host 的 layer_first 是 [层, token, H, D] 三层结构（加上第 0 维 K/V 才是 4 层）， 天然没有 page 维 。要满足算子"5-D 且 host.sizes[1] 是层数"的契约，就必须把每一层单独重塑成 [page_num, 1, page_size, H, D] （中间插一个 1 表示"本次只有 1 层"），对应设备侧也切成 [1, dev_pages, page_size, H, D] （ 1 表示 1 层”
+
+
+1、为什么要叫self._device_layer_num而不是叫self._target_layer_num
+self._device_layer_num表示全局的target层数
+self._target_layer_num表示当前NPU上的target层数
+2、info_index的取值是不是通常就是0、1，0表示target_layer，1表示draft_layer。
+0必然是target_layer
+1..N都是dragt_layer
+3、为什么第752-753行中deivce_layer_id计算时要考虑是否为draft，但是host_layer_id不需要考虑？
+device侧：
+native[0]:k[0],k[1],k[2]... (target)
+native[1]:k[0] (draft)
+native[2]:k[0] (draft)
+native[3]:k[0] (draft)
+host侧：
+self.k_buffer[0] (target)
+self.k_buffer[1] (target)
+self.k_buffer[2] (draft)
+一句话：host侧的kv，target/draft存放格式相同；device分开存
+
+https://gitcode.com/Ascend/memfabric_hybrid
+
+modelscope download --model ZhipuAI/GLM-5.2 config.json --local_dir ./GLM-5.2
+
+modelscope download --model ZhipuAI/GLM-5.3-Flash config.json --local_dir ./GLM-5.3-Flash
+
+modelscope download --model deepseek-ai/DeepSeek-V4-Flash-0731 config.json --local_dir ./DeepSeek-V4-Flash-0731
+
+nohup modelscope download --model Eco-Tech/DeepSeek-V4-Flash-0731-w8a8 --local_dir ./ > download.log 2>&1 &
+
+nohup modelscope download --model deepseek-ai/DeepSeek-V4.1-Flash-1017 --local_dir ./ > download.log 2>&1 &
+
+nohup modelscope download --model Eco-Tech/DeepSeek-V4.1-Flash-1017-w8a8 --local_dir ./ > download.log 2>&1 &
+
+nohup modelscope download --model Eco-Tech/GLM-5.2-w4a8c8 --local_dir ./GLM-5.2-w4a8c8 > download.log 2>&1 &
+
+nohup modelscope download --model Eco-Tech/GLM-5.2-w4a8c8 --local_dir ./ > download.log 2>&1 &
+
+nohup modelscope download --model deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct --local_dir ./ > download.log 2>&1 &
+
+
+1、跑基于MLA的L1<->L2的性能测试（主要是TTFT, 吞吐） 完成
+2、GLM5.2如果是纯MLA+indexer就需要适配 完成验证，性能差不多
+3、mambapool社区只支持了page_first，优先级最低可以不适配，可以给个分析transfer_mamba_state中page_first和layer_first性能差距不大的结论 已完成分析
+4、deepseekv4后续应该要适配验证（用aiv算子）
+5、_init_layer_first_kv_split_buffer的实现和page_first有些冗余，提取公共点 已完成
+6、agent分析出错，glm5.2走的应该是mla的indexer
+
+底层采用aclrtMemcpy2dAsync算子，每次处理一对「device 槽 ↔ host 槽」，也就是说不管是H2D或者D2H，它都不会连续搬运，page_first或layer_first性能相同，适配layer_first没有收益
+
+10.23
+1、学会用profiling分析性能
+2、分析deepseekv4是否能用ascendc算子，如果可以进行适配验证
+3、熟悉kv cache l1->l2流程(包括初始化、如何根据config文件判断模型走哪个文件)，理解原理，尤其是算子(layer_first性能应该优于page_first)
+4、mha是否验证
+5、整理prompt（服务启动命令、精度用例、性能用例、常见报错、必备约束：容器、python路径。。。迅速查询占用NPU进程使用情况的脚本）
+
+https://gitcode.com/cx22757/sgl_notebook/blob/main
+
+dsv4参数有效性组合分析md
+D:/Workspace/sglang/remote_dsv4_work/hicache_parameter_cause_20261026/analysis.md
+
+gsm8k精度验证（d2h,h2d）
+D:/Workspace/sglang/remote_dsv4_work/gsm8k_aiv_long_fewshot/
+需要其中的运行100题目的测试脚本以及验证报告，还有read.md
+
+少数请求（d2h,h2d）验证
+/home/l00889655/sglang/sgl_notebook_l2_2n_20261026/layer_first_ascendc_sparse_copy_validation_20261026.md测试脚本和报告
+
+/home/l00889655/sglang/dsv4_ttft_20261027_102613下测试脚本和报告
+
+为下面的每个文件夹都补充一个脚本，说明当前路径下脚本的运行方式，如何测试
+sglang/sglang/coder_v2_lite_aiv_accuracy_20261027
+sglang/sglang/coder_v2_lite_ttft_performance_20261028
+sglang/sglang/dsv4_gsm8k_aiv_long_fewshot_100_20261027
+sglang/sglang/dsv4_hicache_parameter_cause_20261026
+sglang/sglang/dsv4_layer_first_kv_spilt_validation_few_requests
+sglang/sglang/dsv4_ttft_performance
+
+
+写的测试脚本需要具有可迁移性（A3->A5, A3->另一台A3）
+
+1、如何下载权重A5
+2、161002的报错
+
+
+python3 -m sglang.launch_server --model-path /mnt/share/GLM-5.2-w4a8c8 --host 127.0.0.1 --port 32348 --tp-size 8 --ep 8 --moe-a2a-backend deepep --deepep-mode normal --deepep-dispatcher-output-dtype bf16 --enable-hicache --hicache-mem-layout layer_first --hicache-io-backend kernel_ascend --hicache-write-policy write_through --hicache-ratio 2.5 --mem-fraction-static 0.86 --max-total-tokens 3072 --device npu --attention-backend ascend --disable-cuda-graph --log-level info
+
+ASCEND_TOOLKIT_ROOT="${ASCEND_TOOLKIT_ROOT:-/usr/local/Ascend/ascend-toolkit/latest}"
+CANN_PYTHON_SITE_PACKAGES="${CANN_PYTHON_SITE_PACKAGES:-/usr/local/Ascend/cann-9.1.0/python/site-packages}"
+ATB_ENV_SCRIPT="${ATB_ENV_SCRIPT:-/usr/local/Ascend/nnal/atb/set_env.sh}"
+source "$ASCEND_TOOLKIT_ROOT/opp/vendors/customize/bin/set_env.bash"
+source "$ASCEND_TOOLKIT_ROOT/opp/vendors/custom_transformer/bin/set_env.bash"
+source "$ASCEND_TOOLKIT_ROOT/set_env.sh"
+source "$ATB_ENV_SCRIPT"
+set -u
+: "${AUDIT_DIR:?Set a fresh AUDIT_DIR}"
+: "${NPU_DEVICES:?Set eight free physical NPU IDs}"
+export ASCEND_RT_VISIBLE_DEVICES="$NPU_DEVICES"
+python3 - <<'PY'
+import os
+ids=os.environ['ASCEND_RT_VISIBLE_DEVICES'].split(',')
+assert len(ids)==8 and len(set(ids))==8 and all(x.isdigit() for x in ids)
+PY
+export SGLANG_HICACHE_HOST_MEM_BACKEND=memfabric
+export HCCL_BUFFSIZE=512
+export PYTHONPATH="${SGLANG_ROOT:-/home/l00889655/sglang/sglang}/python:$ASCEND_TOOLKIT_ROOT/python/site-packages:$CANN_PYTHON_SITE_PACKAGES:${PYTHONPATH:-}"
+
+DSV4
+H2D:
+kernel layer_first transfer_kv_all_layer_mla
+kernel page_first transfer_kv_all_layer_mla_lf_pf
+direct layer_first transfer_kv_direct
+direct page_first_direct transfer_kv_all_layer_direct_lf_pf
+D2H:
+kernel layer_first transfer_kv_per_layer_mla
+kernel page_first transfer_kv_per_layer_mla_pf_lf
+direct layer_first transfer_kv_direct
+direct page_first_direct transfer_kv_per_layer_direct_pf_lf
+
+DSV4
+H2D:
+kernel layer_first transfer_kv_all_layer_mla
+kernel page_first transfer_kv_all_layer_mla_lf_pf
+direct layer_first transfer_kv_direct
+direct page_first_direct transfer_kv_all_layer_direct_lf_pf
+D2H:
+kernel layer_first transfer_kv_per_layer_mla
+kernel page_first transfer_kv_per_layer_mla_pf_lf
+direct layer_first transfer_kv_direct
+direct page_first_direct transfer_kv_per_layer_direct_pf_lf
+
+给出服务启动日志路径
+
+- mf编译
+bash -x script/build_and_pack_run.sh --build_mode RELEASE --build_python ON --xpu_type NPU
+bash -x output/xxx.run
+mfcli kernel install --soc-version A3/A5
+mfcli kernel info
+
+- 更换mf1.5.0版本，启动服务卡住
+解决方法：关闭指定NPU的验签
+for i in {0..7}}do npu-smi set -t custom-op-secverify-mode-i $i -d 0; done
+
+source /usr/local/Ascend/ascend-toolkit/latest/opp/vendors/customize/bin/set_env.bash
+source /usr/local/Ascend/ascend-toolkit/latest/opp/vendors/custom_transformer/bin/set_env.bash
+source /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+
+export ASCEND_RT_VISIBLE_DEVICES=8,9,10,11,12,13,14,15
+export SGLANG_HICACHE_HOST_MEM_BACKEND=memfabric
+export HCCL_BUFFSIZE=512
+export PYTHONPATH="/home/l00889655/sglang/sglang/python:/home/l00889655/sglang/sgl-kernel-npu/python/sgl_kernel_npu:/usr/local/Ascend/ascend-toolkit/latest/python/site-packages:/usr/local/Ascend/cann-9.1.0/python/site-packages:${PYTHONPATH:-}"
+
+export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+python3 -m sglang.launch_server \
+  --model-path /mnt/paas/weights/GLM-5.2-w4a8c8 \
+  --host 127.0.0.1 --port 32348 \
+  --tp-size 8 --ep 8 \
+  --moe-a2a-backend deepep --deepep-mode normal \
+  --deepep-dispatcher-output-dtype bf16 \
+  --enable-hicache --hicache-mem-layout layer_first \
+  --hicache-io-backend kernel_ascend \
+  --hicache-write-policy write_through \
+  --hicache-ratio 2.5 \
+  --mem-fraction-static 0.86 \
+  --max-total-tokens 3072 \
+  --device npu --attention-backend ascend \
+  --disable-cuda-graph --log-level info
+  
+for i in {0..7}; do npu-smi set -t custom-op-secverify-enable -i $i -d 1; done
+
+for i in {0..7}; do npu-smi set -t custom-op-secverify-mode -i $i -d 0; done
+
+npu-smi info -t custom-op-secverify-mode -i 0
+
+docker exec -it sglang-lzx-B103 bash
+npu-smi info
+
+export PORT=32348
+python3 -u /home/l00889655/sglang/glm52_lf_kv_split_e2e/run_e2e.py \
+  /home/l00889655/sglang/glm52_lf_kv_split_smoke_010 \
+  0,1,2,3,4,5,6,7 3
+  
+参考刚刚glm5.2的测试，用/home/l00889655/sglang/sgl-kernel-npu下的分支npu/hicache-sparse-copy和/home/l00889655/sglang/sglang下的分支cjz_op，用deepseek-v4-flash-0731-w8a8这个模型端到端验证layer_first_kv_split布局下D2H, H2D是否正常（使用aiv算子），可以参考之前layer_first_ascendc_sparse_copy分支下sglang\dsv4_gsm8k_aiv_long_fewshot_100_20261027的测试脚本。请先写出测试脚本，并且说明测试原理和服务启动参数
+
+
+/home/l00889655/sglang/dsv4_pf_kv_split_e2e
+/home/l00889655/sglang/dsv4_lf_kv_split_e2e
+/home/l00889655/sglang/dsv4_ttft_compare
+/home/l00889655/sglang/glm52_lf_kv_split_e2e
+
+/home/l00889655/sglang/dsv4_pf_aiv_50_front8_w8a8mtp_20261102
+/home/l00889655/sglang/dsv4_lf_aiv_50_front8_w8a8mtp_20261102
+/home/l00889655/sglang/dsv4_split_ttft_back8_20261102
+/home/l00889655/sglang/glm52_lf_kv_split_smoke_08_20261102
+
+
+python3 -m sglang.bench_serving \
+  --backend sglang \
+  --host 61.47.19.68 --port 8010 \
+  --model /home/weights/GLM-5.2-w4a8 \
+  --dataset-name generated-shared-prefix \
+  --gsp-num-groups 1 --gsp-prompts-per-group 5 \
+  --gsp-system-prompt-len 1 --gsp-question-len 32000 --gsp-output-len 1 \
+
+
+# GLM-5.2 W4A8 单机混步 + HiCache aclrt_aiv 迁移算子验证
+echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+sysctl -w vm.swappiness=0
+sysctl -w kernel.numa_balancing=0
+sysctl -w kernel.sched_migration_cost_ns=50000
+# bind cpu
+export SGLANG_SET_CPU_AFFINITY=1
+unset https_proxy
+unset http_proxy
+unset HTTPS_PROXY
+unset HTTP_PROXY
+unset ASCEND_LAUNCH_BLOCKING
+# export ASCEND_LAUNCH_BLOCKING=1
+# cann
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+rm -rf /root/ascend/log/debug/plog/
+# hccl相关环境变量
+export HCCL_BUFFSIZE=500
+export HCCL_OP_EXPANSION_MODE=AIV
+# 内存碎片管理
+export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
+export STREAMS_PER_DEVICE=32
+# 使用ascendc的flash attention
+export ASCEND_USE_FIA=1
+# deepep相关环境变量
+export DEEPEP_HYBRID_DEPLOYMENT=1
+export SGLANG_DEEPEP_NUM_MAX_DISPATCH_TOKENS_PER_RANK=32
+export DEEPEP_HCCL_BUFFSIZE=2500
+# 在调度阶段启用蚂蚁搬家
+export DEEPEP_NORMAL_LONG_SEQ_ROUND=20
+export DEEPEP_NORMAL_LONG_SEQ_PER_ROUND_TOKENS=4096
+# combine开启蚂蚁搬家，对性能有影响，如果能运行则无需开启
+export DEEPEP_NORMAL_COMBINE_ENABLE_LONG_SEQ=0
+export HCCL_SOCKET_IFNAME=lo
+export GLOO_SOCKET_IFNAME=lo
+export HCCL_HOST_SOCKET_PORT_RANGE=auto
+# ===== HiCache 迁移算子验证相关 =====
+# NPU HiCache 后端: aclrt_aiv (python aclrt 注册 host 池 + AIV kv_exchange 搬运)
+# export SGLANG_HICACHE_NPU_BACKEND=mf_aiv
+export SGLANG_HICACHE_HOST_MEM_BACKEND=memfabric
+unset SGLANG_HICACHE_NPU_BACKEND
+export MF_HYBM_URMA_CHANNEL_NUM=4
+
+export PYTHONPATH=/home/w00937173/code/sglang/python:$PYTHONPATH
+export PYTHONPATH=/home/w00937173/sgl-kernel-npu/python/sgl_kernel_npu:$PYTHONPATH
+
+MODEL_PATH=/home/weights/GLM-5.2-w4a8
+mkdir -p /home/w00937173/run_file/glm5.2/log
+
+sglang serve \
+    --model-path $MODEL_PATH \
+    --served-model-name $MODEL_PATH \
+    --trust-remote-code \
+    --attention-backend ascend \
+    --device npu \
+    --mem-fraction-static 0.8 \
+    --tp-size 16 \
+    --host 61.47.19.68 \
+    --port 8010 \
+    --chunked-prefill-size 8192 \
+    --max-total-tokens 81920 \
+    --max-running-requests 32 \
+    --moe-a2a-backend deepep --deepep-mode auto \
+    --cuda-graph-bs-decode 2 4 8 12 16 \
+    --quantization modelslim --dtype bfloat16 \
+    --load-balance-method round_robin \
+    --served-model-name glm-5 \
+    --hicache-io-backend kernel_ascend \
+    --hicache-mem-layout page_first_kv_split \
+    --enable-hierarchical-cache \
+    --hicache-ratio 2 \
+    --hicache-write-policy write_through \
+    2>&1 | tee /home/w00937173/run_file/glm5.2/log/sglang-mix-glm52-hicache-aiv.log
+	
+	
+if not _memfabric_state["initialized"]:
+	config = offload.OffloadConfig()
+	config.device_id = device_id
+	config.reserve_size = required_bytes
+	config.alloc_size = required_bytes
+	config.scene = offload.Scene.AICPU
+	config.flags = 0
+# _register_mf_host_block(tensor)
+
+
+8,9,10,11,12,13,14,15
+0,1,2,3,4,5,6,7
+cd /home/l00889655/sglang/dsv4_sparse_aiv_20261105/dsv4_lf_kv_split_e2e
+export PORT=32420
+export STARTUP_TIMEOUT=3600
+export MODEL_PATH=/mnt/paas/weights/DeepSeek-V4-Flash-0731-w8a8
+export TRAIN_PATH=/home/l00889655/sglang/gsm8k_train.jsonl
+export TEST_PATH=/home/l00889655/sglang/gsm8k_test.jsonl
+export SGLANG_ROOT=/home/l00889655/sglang/sglang
+export KERNEL_ROOT=/home/l00889655/sglang/sgl-kernel-npu
+export DP_RANK=0
+export EVICTION_TOKENS=65536
+python3 -u run_e2e.py /home/l00889655/sglang/dsv4_lf_aiv_gsm8k_200 0,1,2,3,4,5,6,7 200
+
+
+export PORT=32420
+export STARTUP_TIMEOUT=3600
+export MODEL_PATH=/mnt/paas/weights/DeepSeek-V4.1-Flash-1017-w8a8
+export TRAIN_PATH=/home/l00889655/sglang/gsm8k_train.jsonl
+export TEST_PATH=/home/l00889655/sglang/gsm8k_test.jsonl
+export SGLANG_ROOT=/home/l00889655/sglang/sglang
+export KERNEL_ROOT=/home/l00889655/sglang/sgl-kernel-npu
+export DP_RANK=0
+export EVICTION_TOKENS=65536
+python3 -u run_e2e.py /home/l00889655/sglang/dsv41_lf_aiv_gsm8k_2 0,1,2,3,4,5,6,7 2
