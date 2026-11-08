@@ -1,6 +1,6 @@
 ---
-name: pr
-description: Draft and review SGLang pull request titles and descriptions using the required title format, test evidence, and contribution checklist.
+name: sglang-pr
+description: Draft and review SGLang pull request titles and descriptions using the required title format, test evidence, and contribution checklist. Use when 用户要为 sglang 仓库写或检查 PR 标题与描述，or asks to draft a PR. Do not use for 其他仓库、代码改动本身、测试或压测。
 ---
 
 # SGLang PR 编写规范
@@ -82,14 +82,4 @@ If not run, explain why. If not applicable, write N/A and explain why. -->
 
 ## Review 与合并流程
 
-以下为 PR 提交后的协作流程；编写标题或描述本身不包含发送消息、触发 CI 或执行合并。
-
-1. 联系 Merge Oncalls 启动流程，参见 [PR Merge Process](https://github.com/sgl-project/sglang/blob/main/.github/MAINTAINER.md#pull-request-merge-process)。
-2. 获取 [CODEOWNERS](https://github.com/sgl-project/sglang/blob/main/.github/CODEOWNERS) 和其他 reviewer 的批准。
-3. 按 [How to trigger CI tests](https://docs.sglang.io/developer_guide/contribution_guide.html#how-to-trigger-ci-tests) 使用评论触发 CI，或联系有权限的用户执行。常见命令：
-   - `/tag-and-rerun-ci`
-   - `/tag-run-ci-label`
-   - `/rerun-failed-ci`
-4. CI 通过且取得必要批准后，请 Merge Oncalls 或拥有 Write 权限的人员合并 PR。
-
-如有疑问，可向维护者咨询或加入 [SGLang Slack 社区](https://slack.sglang.io)。
+提交 PR 之后的协作流程（联系维护者、触发 CI、合并）参见 `references/merge-process.md`。
